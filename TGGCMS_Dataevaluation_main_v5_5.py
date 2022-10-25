@@ -16,7 +16,7 @@ from scipy.signal import find_peaks
 import seaborn as sns
 from scipy.signal import butter,filtfilt
 import glob
-
+import sys
 
 def getlistofint(MSdf, text):
     print("'b' for back to main menu")
@@ -198,7 +198,7 @@ def noisefilter(MSdf):
         MSdf_operate=MSdf.copy(deep=True)
         #ask for inputvalues for the Butterworth filter
         fs = 0.7 * getvalue(MSdf, 'Minimum Peak Width in Seconds (~1.0): ', float)#  int(input('Minimum Peak Width in Seconds (~1.0): '))
-        cutoff = getvalue(MSdf, 'Noise Frequency in Hz (~0.2): 0.', int) #int(input ('Noise Frequency in Hz (~0.2): 0.')) /10      # desired cutoff frequency of the filter, Hz ,      slightly higher than actual 1.2 Hz                       
+        cutoff = getvalue(MSdf, 'Noise Frequency in Hz (~0.2): 0.', int) /10 #int(input ('Noise Frequency in Hz (~0.2): 0.')) /10      # desired cutoff frequency of the filter, Hz ,      slightly higher than actual 1.2 Hz                       
         # Filter requirements.
         nyq = 0.5 * fs  # Nyquist Frequency
         order = 2       # sin wave can be approx represented as quadratic
@@ -219,8 +219,8 @@ def noisefilter(MSdf):
             Counter = 0
             for mass in df.columns:
                 data=df[mass]
-                if (Counter % 10 ==0):
-                    print(str(int(Counter/len(df.columns)*100)) + ' %')
+                #if (Counter % 10 ==0):
+                #    print(str(int(Counter/len(df.columns)*100)) + ' %')
                 Counter += 1 
                 # Filter requirements.
                 nyq = 0.5 * fs  # Nyquist Frequency
@@ -246,9 +246,10 @@ def noisefilter(MSdf):
         #rearrange datalist so it fits into other programs
         df = pd.DataFrame(datalist, columns = ['ScanRange', 'Scannumber', 'Mass', 'Intensity'])
         # reinsert Retention times into dataframe
-        df.insert(loc=2, column = 'RetetionTime', value = pd.DataFrame(RetTimelist))
+        df.insert(loc=2, column = 'RetentionTime', value = pd.DataFrame(RetTimelist))
         # sort dataframe so it matches input MSdf
         df = df.sort_values(by=['Scannumber', 'ScanRange'])
+        df = df[df['Intensity'] > 0]
         filter_ok = 'y' #input('Filter factor level ok ? (y/n): ') 
     return df
 
@@ -744,9 +745,11 @@ with open(str(file[0])) as MSdata:
 #Making dataframe out of imported data
 MSdf = pd.DataFrame(MSlist, columns = ['ScanRange', 'Scannumber', 'RetentionTime', 'Mass', 'Intensity'])
 denoise = getyninput(MSdf, 'Do you want to work on denoised data (Memory Consuming)? (y/n): ') #input('Do you want to work on denoised data (Memory Consuming)? (y/n): ')
+print(MSdf)
 if denoise == 'y':
     MSdf = noisefilter(MSdf)
-    print(MSdf)
+print(MSdf)
+
 
 def main(MSdf):
     valid = 'n'
@@ -782,7 +785,7 @@ def main(MSdf):
              massestolookat(MSdf)
              valid = getyninput(MSdf, 'done with the file? (y/n): ')#input('done with the file? (y/n): ')
         elif prgchoice == 8:
-             break
+             sys.exit()
         else:
             print('number not in program list')
             valid == 'n'
